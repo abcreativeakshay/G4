@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NOVA-7 TACTICAL INTERFACE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <!-- Load html2pdf bundle globally to avoid ESM issues -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+      body {
+        font-family: 'Courier Prime', monospace;
+        background-color: #f8f9fa;
+      }
+      .font-display {
+        font-family: 'Space Mono', monospace;
+      }
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-left: 1px solid #ddd;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #ea580c; 
+        border: 2px solid #f1f1f1;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #c2410c;
+      }
+      
+      @media print {
+        .no-print {
+          display: none !important;
+        }
+        body {
+          background: white;
+          color: black;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        .page-break {
+          page-break-before: always;
+        }
+      }
+
+      /* PDF Export Mode Styles - EXACT REPLICA */
+      .pdf-mode {
+        background-color: white !important;
+        padding: 40px !important; /* Add padding to container to prevent edge clipping */
+        width: 100% !important;
+        max-width: 100% !important;
+        display: block !important; /* Ensure block layout for canvas capture */
+        height: auto !important;
+        overflow: visible !important;
+        color: #111827 !important;
+        font-family: 'Courier Prime', monospace !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      /* Force page breaks on major headers */
+      .pdf-mode .section-header {
+        page-break-before: always !important;
+        margin-top: 0 !important;
+        padding-top: 30px !important;
+      }
+      
+      /* First section shouldn't break page */
+      .pdf-mode .section-header:first-of-type {
+        page-break-before: avoid !important;
+      }
+
+      /* Prevent page breaks inside Answer Modules */
+      .pdf-mode .answer-module {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        margin-top: 24px !important;
+        margin-bottom: 24px !important;
+        /* Force shadows and borders to render exactly as seen on web */
+        box-shadow: 4px 4px 0px 0px #f97316 !important; /* Solid orange hex */
+        border: 2px solid #0f172a !important; /* Slate-900 */
+        background-color: white !important;
+        position: relative !important;
+      }
+
+      /* FIX BADGE POSITIONING FOR HTML2CANVAS */
+      /* html2canvas struggles with transforms, so we use absolute positioning in PDF mode */
+      .pdf-mode .print-badge {
+         background-color: #f97316 !important;
+         color: white !important;
+         -webkit-print-color-adjust: exact !important;
+         print-color-adjust: exact !important;
+         
+         /* Override Tailwind transforms */
+         transform: none !important; 
+         top: -11px !important; /* Half of badge height approx */
+         left: 16px !important;
+         bottom: auto !important;
+         right: auto !important;
+         z-index: 10 !important;
+      }
+
+      /* Typography Tweaks for Print */
+      .pdf-mode h1 {
+        font-size: 28px !important;
+        margin-bottom: 24px !important;
+        color: #ea580c !important;
+        border-bottom-width: 4px !important;
+      }
+      
+      .pdf-mode h2 {
+        font-size: 24px !important;
+        color: #ea580c !important; 
+      }
+
+      .pdf-mode p, 
+      .pdf-mode li {
+        font-size: 12px !important;
+        line-height: 1.6 !important;
+      }
+      
+      /* Hide buttons in PDF */
+      .pdf-mode button {
+        display: none !important;
+      }
+      
+      /* Code blocks */
+      .pdf-mode pre,
+      .pdf-mode code {
+        white-space: pre-wrap !important;
+        word-break: break-word !important;
+        font-size: 11px !important;
+      }
+      
+      .pdf-mode .katex {
+        font-size: 1.1em !important;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "react-markdown": "https://esm.sh/react-markdown@^10.1.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "remark-gfm": "https://esm.sh/remark-gfm@^4.0.1",
+    "remark-math": "https://esm.sh/remark-math@^6.0.0",
+    "rehype-katex": "https://esm.sh/rehype-katex@^7.0.0"
+  }
+}
+</script>
+</head>
+  <body class="text-slate-900 antialiased overflow-x-hidden selection:bg-orange-200 selection:text-orange-900">
+    <div id="root"></div>
+  </body>
+</html>
